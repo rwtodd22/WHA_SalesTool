@@ -11,49 +11,49 @@ const items = [
     name: "Vinyl Banner",
     image: "https://plentymooredesigns.com/uploads/1/2/4/4/124403943/s706631590748981013_p93_i2_w1500.jpeg",
     basePrice: 3.15,
-    description: "Durable outdoor/indoor banners for promotions and events."
-  },
-  {
-    name: "Foam Board",
-    image: "https://kmzprints.com/wp-content/uploads/2020/01/foam-prints-2-600x60040-1.jpg",
-    basePrice: 8.00,
-    description: "Lightweight display board, great for presentations and signage."
-  },
-  {
-    name: "Window Graphic",
-    image: "https://www.frontsigns.com/wp-content/uploads/2019/01/Outdoor-Window-Decals.jpg",
-    basePrice: 7.00,
-    description: "Adhesive vinyl graphics ideal for storefronts and glass surfaces."
-  },
-  {
-    name: "Coroplast Sign",
-    image: "https://printmor.com/wp-content/uploads/2016/03/Coroplast-Final-1-700x525.png",
-    basePrice: 6.25,
-    description: "Rigid corrugated plastic sign, perfect for temporary outdoor use."
+    description: "Durable 13oz or 18oz vinyl banner material for indoor and outdoor use. Resistant to water and UV exposure, vinyl banners are ideal for grand openings, trade shows, events, promotions, and building signage. Available with hemming, grommets, or pole pockets for easy hanging."
   },
   {
     name: "Temporary Vinyl",
     image: "https://dm79nhn1epchz.cloudfront.net/images/products_gallery_images/Roll_Media_-_Spot_On_White_Window_800x800.png",
     basePrice: 7.00,
-    description: "Removable adhesive vinyl, great for short-term graphics."
+    description: "Low-tack, repositionable vinyl ideal for temporary wall and window applications. Easy to install and remove without leaving residue. Great for short-term branding, seasonal promos, or event decor."
   },
   {
     name: "Permanent Vinyl",
     image: "https://i0.wp.com/40visuals.com/wp-content/uploads/2022/06/positive.jpg?fit=1020%2C690&ssl=1",
     basePrice: 10.00,
-    description: "Long-lasting vinyl for permanent applications."
+    description: "High-tack adhesive vinyl designed for long-term indoor or outdoor use. UV- and water-resistant, suitable for vehicle graphics, signage, window decals, and durable labels. Available in gloss or matte finish."
+  },
+  {
+    name: "Coroplast Sign",
+    image: "https://printmor.com/wp-content/uploads/2016/03/Coroplast-Final-1-700x525.png",
+    basePrice: 6.25,
+    description: "Durable corrugated plastic signage, most commonly used for yard signs, real estate, event wayfinding, or temporary outdoor displays. Weather-resistant and lightweight, typically printed single- or double-sided."
+  },
+  {
+    name: "Foam Board",
+    image: "https://kmzprints.com/wp-content/uploads/2020/01/foam-prints-2-600x60040-1.jpg",
+    basePrice: 8.00,
+    description: "Lightweight, smooth surface ideal for presentations, retail displays, and indoor signage. Foam board offers a rigid structure yet is easy to mount and trim. Best used in protected indoor environments as it's not moisture-resistant."
   },
   {
     name: "PVC Board",
     image: "https://d2ngzhadqk6uhe.cloudfront.net/asaprepro/images/product/PVC_4_stacked_11131417202201.jpg",
     basePrice: 8.50,
-    description: "Smooth, durable board used for rigid indoor/outdoor signage."
+    description: "Smooth, rigid PVC signage ideal for retail graphics, POP displays, wall signage, and long-lasting indoor/outdoor use. Resistant to warping and weather, available in 1/8\" to 1/2\" thicknesses."
+  },
+  {
+    name: "Acrylic Panels",
+    image: "https://via.placeholder.com/600x400?text=Acrylic+Panels",
+    basePrice: 11.00,
+    description: "High-gloss acrylic panels used for modern interior signage, gallery displays, and architectural applications. Offers a sleek, glass-like finish and excellent depth of color. Durable, easy to clean, and available in a variety of thicknesses."
   },
   {
     name: "Backlit Film",
     image: "https://cdn.printnetwork.com/production/assets/5966561450122033bd4456f8/imageLocker/5b2ade00a5449bab7de6a996/5b2ade00a5449bab7de6a996/Backlit_Gallery_4_min_1683670325970.jpg",
     basePrice: 8.00,
-    description: "Translucent film designed for lightbox displays."
+    description: "Translucent polyester film designed for lightbox applications. Produces vibrant color when illuminated from behind. Ideal for menu boards, retail displays, airport signs, or backlit kiosks."
   }
 ];
 
@@ -65,20 +65,32 @@ function getDiscountedPrice(basePrice, quantity) {
 }
 
 export default function WideFormatSalesTool() {
-  const [width, setWidth] = useState(0);
-  const [height, setHeight] = useState(0);
+  const [grandTotal, setGrandTotal] = useState(0);
   const [quantities, setQuantities] = useState({});
+  const [dimensions, setDimensions] = useState({});
   const [pricing, setPricing] = useState({});
+  const [finishingOptions, setFinishingOptions] = useState({
+    'Vinyl Banner': ['Grommets (Every 24\")', 'Hemming Around Perimeter']
+  });
   const [pricingTiers, setPricingTiers] = useState({});
-    const [error, setError] = useState("");
   const [selectedItems, setSelectedItems] = useState([]);
 
   useEffect(() => {
     calculatePricing();
-  }, [width, height, quantities, pricingTiers]);
+  }, [quantities, dimensions, pricingTiers, finishingOptions, selectedItems]);
 
   const handleQuantityChange = (name, value) => {
     setQuantities((prev) => ({ ...prev, [name]: Number(value) }));
+  };
+
+  const handleDimensionChange = (name, key, value) => {
+    setDimensions((prev) => ({
+      ...prev,
+      [name]: {
+        ...prev[name],
+        [key]: Number(value),
+      },
+    }));
   };
 
   const toggleSelectedItem = (name) => {
@@ -87,17 +99,18 @@ export default function WideFormatSalesTool() {
     );
   };
 
-  const calculatePricing = () => {
-    if (width <= 0 || height <= 0) {
-      setError("Please enter valid width and height.");
-      return;
-    }
+  const handleFinishingToggle = (itemName, option) => {
+    const current = new Set(finishingOptions[itemName] || []);
+    current.has(option) ? current.delete(option) : current.add(option);
+    setFinishingOptions((prev) => ({ ...prev, [itemName]: Array.from(current) }));
+  };
 
-    setError("");
-    const sqFt = (width * height) / 144;
+  const calculatePricing = () => {
     const newPricing = {};
 
     items.forEach((item) => {
+      const dims = dimensions[item.name] || { width: 0, height: 0 };
+      const sqFt = (dims.width * dims.height) / 144;
       const quantity = quantities[item.name] || 1;
       let base = item.basePrice;
       const tier = pricingTiers[item.name] || "A";
@@ -112,188 +125,170 @@ export default function WideFormatSalesTool() {
       const adjustedPrice = getDiscountedPrice(base, quantity);
       newPricing[item.name] = (sqFt * adjustedPrice * quantity).toFixed(2);
     });
+
     setPricing(newPricing);
-  };
-
-  const handleFocus = (setter) => () => {
-    setter("");
-  };
-
-  const exportToPDF = () => {
-    const doc = new jsPDF({ orientation: "portrait", unit: "pt", format: "letter" });
-    const img = new Image();
-    img.src = "/mnt/data/Worth-Wide-Color.png";
-    img.onload = () => {
-      doc.addImage(img, "PNG", 40, 30, 150, 50);
-      doc.setFont("helvetica", "bold");
-      doc.setFontSize(20);
-      doc.text("Worth Wide Estimate", 220, 100);
-      doc.setFontSize(12);
-      doc.setLineWidth(0.5);
-
-      const today = new Date().toLocaleDateString();
-      doc.setFont("helvetica", "normal");
-      doc.text(`Date: ${today}`, 400, 130);
-      doc.text("Salesperson: ______________________________", 50, 160);
-      doc.text("Customer:    ______________________________", 50, 180);
-
-      let y = 210;
-      doc.setFont("helvetica", "bold");
-      doc.line(40, y, 570, y);
-      y += 10;
-      doc.text("Item", 50, y);
-      doc.text("Quantity", 250, y);
-      doc.text("Total Price", 400, y);
-      y += 10;
-      doc.line(40, y, 570, y);
-      y += 20;
-
-      let grandTotal = 0;
-      selectedItems.forEach((itemName) => {
-        const item = items.find((i) => i.name === itemName);
-        const quantity = quantities[itemName] || 1;
-        const price = parseFloat(pricing[itemName] || "0.00");
-
-        doc.setFont("helvetica", "normal");
-        doc.text(itemName, 50, y);
-        doc.text(`${quantity}`, 270, y);
-        doc.text(`$${price.toFixed(2)} (Tier ${pricingTiers[itemName] || 'A'})`, 400, y);
-        y += 20;
-        doc.line(40, y - 10, 570, y - 10);
-
-        grandTotal += price;
-      });
-
-      y += 20;
-      doc.setFont("helvetica", "bold");
-      doc.text("Total (tax & shipping not included):", 50, y);
-      doc.text(`$${grandTotal.toFixed(2)}`, 400, y);
-      y += 20;
-      doc.setFont("helvetica", "italic");
-      doc.text("Note: Tax and shipping are not included and will be added to the final invoice.", 50, y);
-
-      doc.save("Worth_Wide_Estimate.pdf");
-    };
+    const total = Object.entries(newPricing)
+      .filter(([name]) => selectedItems.includes(name))
+      .reduce((sum, [_, value]) => sum + parseFloat(value), 0);
+    setGrandTotal(total);
   };
 
   return (
-    <div className="bg-gray-50 min-h-screen pb-10">
-      <div className="relative overflow-hidden bg-gradient-to-r from-blue-50 to-white py-10 mb-12 shadow-lg rounded-xl mx-auto max-w-5xl px-6 text-center">
-        <img
-          src="https://worthhiggins.com/assets/Worth-Wide-Color.png"
-          alt="WHA Logo"
-          className="mx-auto h-24 mb-4 drop-shadow-lg"
-        />
-        <h1 className="text-6xl font-extrabold tracking-tight text-blue-800 drop-shadow-sm mb-3">
-          Quick Price Tool
-        </h1>
-        <p className="text-xl text-gray-700 italic">Instant Pricing for Signs & Wide Format Products</p>
-        <div className="absolute top-0 left-0 w-full h-full pointer-events-none opacity-10 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] bg-cover"></div>
+    <div className="max-w-7xl mx-auto px-4 py-8 font-sans">
+      <div className="relative text-center mb-10 py-6 px-6 border-2 border-blue-300 rounded-xl shadow-md">
+  <div className="text-center">
+    <img
+      src="https://worthhiggins.com/assets/Worth-Wide-Color.png"
+      alt="Worth Wide Logo"
+      className="mx-auto h-16 sm:h-20 mb-2"
+    />
+    <h1 className="text-5xl font-extrabold tracking-tight text-blue-900 mt-2" style={{ lineHeight: '1.2' }}>
+      Quick Price Tool
+    </h1>
+    <p className="text-lg text-gray-500 font-light tracking-wide">Instant pricing for wide format signage</p>
+  </div>
+      
+<a
+    href="https://forms.gle/example-custom-quote-form"
+    target="_blank"
+    rel="noopener noreferrer"
+    className="absolute top-4 right-4 flex items-center gap-1 text-blue-500 hover:text-blue-700 text-sm"
+    title="Request a Custom Quote"
+  >
+    <span>Custom</span>
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor" className="w-5 h-5">
+      <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 8.25v-1.5A2.25 2.25 0 0014.25 4.5h-4.5A2.25 2.25 0 007.5 6.75v1.5M3.75 9l.637 7.012a2.25 2.25 0 002.244 2.013h10.738a2.25 2.25 0 002.244-2.013L20.25 9H3.75z" />
+    </svg>
+  </a>
+</div>
+<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        {items.map((item) => {
+          const isSelected = selectedItems.includes(item.name);
+          const quantity = quantities[item.name] || 1;
+          const dims = dimensions[item.name] || { width: 0, height: 0 };
+          const selectedFinishes = finishingOptions[item.name] || [];
+
+          return (
+            <Card
+              key={item.name}
+              className={clsx("transition-all transform duration-200 ease-in-out hover:scale-105 hover:shadow-md border-2 rounded-2xl", {
+                "border-blue-500 shadow-lg": isSelected,
+                "border-gray-200": !isSelected
+              })}
+              onClick={(e) => {
+                if (!['INPUT', 'SELECT', 'TEXTAREA', 'LABEL'].includes(e.target.tagName)) {
+                  toggleSelectedItem(item.name);
+                }
+              }}
+            >
+              <CardContent className="p-4">
+                <img src={item.image} alt={item.name} className="w-full h-48 sm:h-56 object-contain bg-white rounded mb-4 border" />
+                <h2 className="text-xl font-semibold text-blue-800">{item.name}</h2>
+                <details className="text-sm text-gray-600 mb-3">
+  <summary className="cursor-pointer text-sm text-gray-600">
+    {item.description.slice(0, 50)}...
+  </summary>
+  <div className="mt-1">
+    <p>{item.description}</p>
+  </div>
+</details>
+
+                <div className="grid grid-cols-3 gap-2 mb-3">
+  <div>
+    <Label>Width (in)</Label>
+    <Input
+      type="number"
+      value={dims.width}
+      placeholder="0"
+      onChange={(e) => handleDimensionChange(item.name, 'width', e.target.value)}
+      onFocus={(e) => e.target.value === "0" && (e.target.value = "")}
+    />
+  </div>
+  <div>
+    <Label>Height (in)</Label>
+    <Input
+      type="number"
+      value={dims.height}
+      placeholder="0"
+      onChange={(e) => handleDimensionChange(item.name, 'height', e.target.value)}
+      onFocus={(e) => e.target.value === "0" && (e.target.value = "")}
+    />
+  </div>
+  <div>
+    <Label>Qty</Label>
+    <Input
+      type="number"
+      min="1"
+      value={quantity}
+      onChange={(e) => handleQuantityChange(item.name, e.target.value)}
+    />
+  </div>
+  <div className="col-span-3">
+    <Label>Pricing Tier</Label>
+    <select
+      value={pricingTiers[item.name] || "A"}
+      onChange={(e) => setPricingTiers((prev) => ({ ...prev, [item.name]: e.target.value }))}
+      className="w-full border rounded px-2 py-1 text-sm"
+    >
+      <option value="A">A (Premium)</option>
+      <option value="B">B (Standard)</option>
+      <option value="C">C (Discount)</option>
+    </select>
+  </div>
+
+                  <p className="text-sm text-blue-600 font-semibold mb-1">Finishing Options</p>
+                  <div className="flex flex-col space-y-1 text-left text-sm mt-2">
+                    {item.name === 'Vinyl Banner' ? (
+                      [
+                        'Grommets (Every 24\")',
+                        'Hemming Around Perimeter',
+                        'Pole Pocket 1',
+                        'Pole Pocket 2',
+                        'Pole Pocket 3',
+                        'Pole Pocket 4'
+                      ].map((finish) => (
+                        <label key={finish} className="inline-flex items-center space-x-2">
+                          <input
+                            type="checkbox"
+                            checked={selectedFinishes.includes(finish)}
+                            onChange={() => handleFinishingToggle(item.name, finish)}
+                          />
+                          <span>{finish}</span>
+                        </label>
+                      ))
+                    ) : (
+                      [
+                        'Grommets (Every 24\")',
+                        'Double Sided'
+                      ].map((finish) => (
+                        <label key={finish} className="inline-flex items-center space-x-2">
+                          <input
+                            type="checkbox"
+                            checked={selectedFinishes.includes(finish)}
+                            onChange={() => handleFinishingToggle(item.name, finish)}
+                          />
+                          <span>{finish}</span>
+                        </label>
+                      ))
+                    )}
+                  </div>
+                </div>
+<p className="mt-4 font-semibold text-green-700 text-lg">
+                  ${pricing[item.name] || "0.00"}
+                </p>
+              </CardContent>
+            </Card>
+          );
+        })}
       </div>
 
-      <div className="max-w-4xl mx-auto px-4 grid gap-6">
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-white p-4 rounded-xl shadow-md">
-          <div>
-            <Label htmlFor="width">Width (inches)</Label>
-            <Input
-              id="width"
-              type="number"
-              value={width}
-              onFocus={handleFocus(setWidth)}
-              onChange={(e) => setWidth(Number(e.target.value))}
-              placeholder="Enter width"
-            />
-          </div>
-          <div>
-            <Label htmlFor="height">Height (inches)</Label>
-            <Input
-              id="height"
-              type="number"
-              value={height}
-              onFocus={handleFocus(setHeight)}
-              onChange={(e) => setHeight(Number(e.target.value))}
-              placeholder="Enter height"
-            />
-          </div>
-        </div>
-        {error && <p className="text-red-500 font-medium">{error}</p>}
-
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {items.map((item) => {
-            const quantity = quantities[item.name] || 1;
-            const base = item.basePrice.toFixed(2);
-            const adjusted = getDiscountedPrice(item.basePrice, quantity).toFixed(2);
-            const hasDiscount = adjusted < base;
-            const isSelected = selectedItems.includes(item.name);
-            const selectedTier = pricingTiers[item.name] || "A";
-            
-            return (
-              <Card
-                key={item.name}
-                onClick={(e) => {
-                  // prevent toggling when interacting with inputs/selects
-                  if (e.target.tagName !== 'SELECT' && e.target.tagName !== 'INPUT') {
-                    toggleSelectedItem(item.name);
-                  }
-                }}
-                className={clsx("transition-transform duration-150 ease-in-out hover:scale-[1.02] cursor-pointer", {
-                  "ring-4 ring-blue-500": isSelected,
-                  "opacity-50": selectedItems.length > 0 && !isSelected
-                })}
-              >
-                <CardContent className="p-4">
-                  <img
-                    src={item.image}
-                    alt={item.name}
-                    className="rounded-xl object-cover w-full h-[200px]"
-                  />
-                  <h3 className="text-xl font-bold mt-4">{item.name}</h3>
-                  <p className="text-sm mt-1 text-gray-600">{item.description}</p>
-                  <div className="mt-2">
-                    <Label htmlFor={`tier-${item.name}`}>Pricing Tier</Label>
-                    <select
-                      id={`tier-${item.name}`}
-                      className="w-full mt-1 mb-2 p-1 border rounded"
-                      value={selectedTier}
-                      onChange={(e) => setPricingTiers((prev) => ({ ...prev, [item.name]: e.target.value }))}
-                    >
-                      <option value="A">A</option>
-                      <option value="B">B</option>
-                      <option value="C">C</option>
-                    </select>
-                    <Label htmlFor={`qty-${item.name}`}>Quantity</Label>
-                    <Input
-                      id={`qty-${item.name}`}
-                      type="number"
-                      min="1"
-                      value={quantity}
-                      onChange={(e) => handleQuantityChange(item.name, e.target.value)}
-                    />
-                  </div>
-                  {hasDiscount && (
-                    <p className="text-sm text-green-600 mt-1">
-                      Volume discount: ${adjusted}/sq ft (was ${base})
-                    </p>
-                  )}
-                  {isSelected && (
-                    <p className="mt-2 font-semibold text-lg text-blue-800">
-                      Total: ${pricing[item.name] || "0.00"}
-                    </p>
-                  )}
-                </CardContent>
-              </Card>
-            );
-          })}
-          <div className="text-center mt-10">
-  <Button
-    onClick={exportToPDF}
-    className="bg-blue-600 text-white px-6 py-3 rounded-xl shadow-md hover:bg-blue-700"
-  >
-    Export Estimate to PDF
-  </Button>
-</div>
-
-        </div>
+      <div className="text-right mt-10">
+        <p className="text-3xl font-bold text-blue-900">
+          Total: ${grandTotal.toFixed(2)}
+        </p>
+        <p className="text-sm text-gray-500 italic">
+          (Excludes tax & shipping)
+        </p>
       </div>
     </div>
   );
