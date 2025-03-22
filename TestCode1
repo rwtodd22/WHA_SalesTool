@@ -45,7 +45,7 @@ const items = [
   },
   {
     name: "Acrylic Panels",
-    image: "https://via.placeholder.com/600x400?text=Acrylic+Panels",
+    image: "https://printpanoramics.co.uk/cdn/shop/products/PP-Acrylic-close-up2-min_1e6dc387-1626-4c27-99cc-cc70d3748520.jpg?v=1711387375&width=1800",
     basePrice: 11.00,
     description: "High-gloss acrylic panels used for modern interior signage, gallery displays, and architectural applications. Offers a sleek, glass-like finish and excellent depth of color. Durable, easy to clean, and available in a variety of thicknesses."
   },
@@ -110,20 +110,40 @@ export default function WideFormatSalesTool() {
 
     items.forEach((item) => {
       const dims = dimensions[item.name] || { width: 0, height: 0 };
+      if (!dims.width || !dims.height) {
+        newPricing[item.name] = "0.00";
+        return;
+      }
       const sqFt = (dims.width * dims.height) / 144;
-      const quantity = quantities[item.name] || 1;
+      const quantity = Math.max(1, Number(quantities[item.name] || 1));
       let base = item.basePrice;
       const tier = pricingTiers[item.name] || "A";
       if (item.name === "Vinyl Banner") {
         if (tier === "B") base = 9.74;
         else if (tier === "A") base = 9.74 * 1.15;
         else base = 9.74 * 0.85;
+      } else if (item.name === "Temporary Vinyl") {
+        if (tier === "B") {
+          if (quantity >= 500) base = 9.74 * 0.49;  // 51% savings
+          else if (quantity >= 200) base = 9.74 * 0.52; // 48%
+          else if (quantity >= 100) base = 9.74 * 0.58; // 42%
+          else if (quantity >= 50) base = 9.74 * 0.6;   // 40%
+          else if (quantity >= 25) base = 9.74 * 0.65;  // 35%
+          else if (quantity >= 10) base = 9.74 * 0.75;  // 25%
+          else if (quantity >= 5)  base = 9.74 * 0.8;   // 20%
+          else base = 9.74;
+        } else if (tier === "A") {
+          base = 9.74 * 1.15;
+        } else {
+          base = 9.74 * 0.85;
+        }
       } else {
         if (tier === "A") base *= 1.3;
         if (tier === "B") base *= 1.15;
       }
       const adjustedPrice = getDiscountedPrice(base, quantity);
-      newPricing[item.name] = (sqFt * adjustedPrice * quantity).toFixed(2);
+      const rawPrice = sqFt * adjustedPrice * quantity;
+      newPricing[item.name] = (rawPrice < 50 ? 50 : rawPrice).toFixed(2);
     });
 
     setPricing(newPricing);
@@ -190,8 +210,7 @@ export default function WideFormatSalesTool() {
   </summary>
   <div className="mt-1">
     <p>{item.description}</p>
-  </div>
-</details>
+  </div></details>
 
                 <div className="grid grid-cols-3 gap-2 mb-3">
   <div>
@@ -223,21 +242,11 @@ export default function WideFormatSalesTool() {
       onChange={(e) => handleQuantityChange(item.name, e.target.value)}
     />
   </div>
-  <div className="col-span-3">
-    <Label>Pricing Tier</Label>
-    <select
-      value={pricingTiers[item.name] || "A"}
-      onChange={(e) => setPricingTiers((prev) => ({ ...prev, [item.name]: e.target.value }))}
-      className="w-full border rounded px-2 py-1 text-sm"
-    >
-      <option value="A">A (Premium)</option>
-      <option value="B">B (Standard)</option>
-      <option value="C">C (Discount)</option>
-    </select>
-  </div>
-
-                  <p className="text-sm text-blue-600 font-semibold mb-1">Finishing Options</p>
-                  <div className="flex flex-col space-y-1 text-left text-sm mt-2">
+  
+</div>
+<details className="mt-3">
+  <summary className="text-sm text-blue-600 underline cursor-pointer mb-1">Finishing Options</summary>
+  <div className="flex flex-col space-y-1 text-left text-sm mt-2">
                     {item.name === 'Vinyl Banner' ? (
                       [
                         'Grommets (Every 24\")',
@@ -271,10 +280,20 @@ export default function WideFormatSalesTool() {
                         </label>
                       ))
                     )}
-                  </div>
-                </div>
+                  </div></details>
+<div className="mt-2 text-right text-xs text-gray-400">Pricing Tier: 
+  <select
+    value={pricingTiers[item.name] || "A"}
+    onChange={(e) => setPricingTiers((prev) => ({ ...prev, [item.name]: e.target.value }))}
+    className="ml-1 border rounded px-1 py-0.5 text-xs bg-white"
+  >
+    <option value="A">A</option>
+    <option value="B">B</option>
+    <option value="C">C</option>
+  </select>
+</div>
 <p className="mt-4 font-semibold text-green-700 text-lg">
-                  ${pricing[item.name] || "0.00"}
+  ${pricing[item.name] || "0.00"}
                 </p>
               </CardContent>
             </Card>
