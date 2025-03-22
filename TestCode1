@@ -1,0 +1,300 @@
+import { useState, useEffect } from "react";
+import { Card, CardContent } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
+import clsx from "clsx";
+import jsPDF from "jspdf";
+
+const items = [
+  {
+    name: "Vinyl Banner",
+    image: "https://plentymooredesigns.com/uploads/1/2/4/4/124403943/s706631590748981013_p93_i2_w1500.jpeg",
+    basePrice: 3.15,
+    description: "Durable outdoor/indoor banners for promotions and events."
+  },
+  {
+    name: "Foam Board",
+    image: "https://kmzprints.com/wp-content/uploads/2020/01/foam-prints-2-600x60040-1.jpg",
+    basePrice: 8.00,
+    description: "Lightweight display board, great for presentations and signage."
+  },
+  {
+    name: "Window Graphic",
+    image: "https://www.frontsigns.com/wp-content/uploads/2019/01/Outdoor-Window-Decals.jpg",
+    basePrice: 7.00,
+    description: "Adhesive vinyl graphics ideal for storefronts and glass surfaces."
+  },
+  {
+    name: "Coroplast Sign",
+    image: "https://printmor.com/wp-content/uploads/2016/03/Coroplast-Final-1-700x525.png",
+    basePrice: 6.25,
+    description: "Rigid corrugated plastic sign, perfect for temporary outdoor use."
+  },
+  {
+    name: "Temporary Vinyl",
+    image: "https://dm79nhn1epchz.cloudfront.net/images/products_gallery_images/Roll_Media_-_Spot_On_White_Window_800x800.png",
+    basePrice: 7.00,
+    description: "Removable adhesive vinyl, great for short-term graphics."
+  },
+  {
+    name: "Permanent Vinyl",
+    image: "https://i0.wp.com/40visuals.com/wp-content/uploads/2022/06/positive.jpg?fit=1020%2C690&ssl=1",
+    basePrice: 10.00,
+    description: "Long-lasting vinyl for permanent applications."
+  },
+  {
+    name: "PVC Board",
+    image: "https://d2ngzhadqk6uhe.cloudfront.net/asaprepro/images/product/PVC_4_stacked_11131417202201.jpg",
+    basePrice: 8.50,
+    description: "Smooth, durable board used for rigid indoor/outdoor signage."
+  },
+  {
+    name: "Backlit Film",
+    image: "https://cdn.printnetwork.com/production/assets/5966561450122033bd4456f8/imageLocker/5b2ade00a5449bab7de6a996/5b2ade00a5449bab7de6a996/Backlit_Gallery_4_min_1683670325970.jpg",
+    basePrice: 8.00,
+    description: "Translucent film designed for lightbox displays."
+  }
+];
+
+function getDiscountedPrice(basePrice, quantity) {
+  if (quantity >= 100) return basePrice * 0.85;
+  if (quantity >= 50) return basePrice * 0.9;
+  if (quantity >= 25) return basePrice * 0.95;
+  return basePrice;
+}
+
+export default function WideFormatSalesTool() {
+  const [width, setWidth] = useState(0);
+  const [height, setHeight] = useState(0);
+  const [quantities, setQuantities] = useState({});
+  const [pricing, setPricing] = useState({});
+  const [pricingTiers, setPricingTiers] = useState({});
+    const [error, setError] = useState("");
+  const [selectedItems, setSelectedItems] = useState([]);
+
+  useEffect(() => {
+    calculatePricing();
+  }, [width, height, quantities, pricingTiers]);
+
+  const handleQuantityChange = (name, value) => {
+    setQuantities((prev) => ({ ...prev, [name]: Number(value) }));
+  };
+
+  const toggleSelectedItem = (name) => {
+    setSelectedItems((prev) =>
+      prev.includes(name) ? prev.filter((item) => item !== name) : [...prev, name]
+    );
+  };
+
+  const calculatePricing = () => {
+    if (width <= 0 || height <= 0) {
+      setError("Please enter valid width and height.");
+      return;
+    }
+
+    setError("");
+    const sqFt = (width * height) / 144;
+    const newPricing = {};
+
+    items.forEach((item) => {
+      const quantity = quantities[item.name] || 1;
+      let base = item.basePrice;
+      const tier = pricingTiers[item.name] || "A";
+      if (item.name === "Vinyl Banner") {
+        if (tier === "B") base = 9.74;
+        else if (tier === "A") base = 9.74 * 1.15;
+        else base = 9.74 * 0.85;
+      } else {
+        if (tier === "A") base *= 1.3;
+        if (tier === "B") base *= 1.15;
+      }
+      const adjustedPrice = getDiscountedPrice(base, quantity);
+      newPricing[item.name] = (sqFt * adjustedPrice * quantity).toFixed(2);
+    });
+    setPricing(newPricing);
+  };
+
+  const handleFocus = (setter) => () => {
+    setter("");
+  };
+
+  const exportToPDF = () => {
+    const doc = new jsPDF({ orientation: "portrait", unit: "pt", format: "letter" });
+    const img = new Image();
+    img.src = "/mnt/data/Worth-Wide-Color.png";
+    img.onload = () => {
+      doc.addImage(img, "PNG", 40, 30, 150, 50);
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(20);
+      doc.text("Worth Wide Estimate", 220, 100);
+      doc.setFontSize(12);
+      doc.setLineWidth(0.5);
+
+      const today = new Date().toLocaleDateString();
+      doc.setFont("helvetica", "normal");
+      doc.text(`Date: ${today}`, 400, 130);
+      doc.text("Salesperson: ______________________________", 50, 160);
+      doc.text("Customer:    ______________________________", 50, 180);
+
+      let y = 210;
+      doc.setFont("helvetica", "bold");
+      doc.line(40, y, 570, y);
+      y += 10;
+      doc.text("Item", 50, y);
+      doc.text("Quantity", 250, y);
+      doc.text("Total Price", 400, y);
+      y += 10;
+      doc.line(40, y, 570, y);
+      y += 20;
+
+      let grandTotal = 0;
+      selectedItems.forEach((itemName) => {
+        const item = items.find((i) => i.name === itemName);
+        const quantity = quantities[itemName] || 1;
+        const price = parseFloat(pricing[itemName] || "0.00");
+
+        doc.setFont("helvetica", "normal");
+        doc.text(itemName, 50, y);
+        doc.text(`${quantity}`, 270, y);
+        doc.text(`$${price.toFixed(2)} (Tier ${pricingTiers[itemName] || 'A'})`, 400, y);
+        y += 20;
+        doc.line(40, y - 10, 570, y - 10);
+
+        grandTotal += price;
+      });
+
+      y += 20;
+      doc.setFont("helvetica", "bold");
+      doc.text("Total (tax & shipping not included):", 50, y);
+      doc.text(`$${grandTotal.toFixed(2)}`, 400, y);
+      y += 20;
+      doc.setFont("helvetica", "italic");
+      doc.text("Note: Tax and shipping are not included and will be added to the final invoice.", 50, y);
+
+      doc.save("Worth_Wide_Estimate.pdf");
+    };
+  };
+
+  return (
+    <div className="bg-gray-50 min-h-screen pb-10">
+      <div className="relative overflow-hidden bg-gradient-to-r from-blue-50 to-white py-10 mb-12 shadow-lg rounded-xl mx-auto max-w-5xl px-6 text-center">
+        <img
+          src="https://worthhiggins.com/assets/Worth-Wide-Color.png"
+          alt="WHA Logo"
+          className="mx-auto h-24 mb-4 drop-shadow-lg"
+        />
+        <h1 className="text-6xl font-extrabold tracking-tight text-blue-800 drop-shadow-sm mb-3">
+          Quick Price Tool
+        </h1>
+        <p className="text-xl text-gray-700 italic">Instant Pricing for Signs & Wide Format Products</p>
+        <div className="absolute top-0 left-0 w-full h-full pointer-events-none opacity-10 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] bg-cover"></div>
+      </div>
+
+      <div className="max-w-4xl mx-auto px-4 grid gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-white p-4 rounded-xl shadow-md">
+          <div>
+            <Label htmlFor="width">Width (inches)</Label>
+            <Input
+              id="width"
+              type="number"
+              value={width}
+              onFocus={handleFocus(setWidth)}
+              onChange={(e) => setWidth(Number(e.target.value))}
+              placeholder="Enter width"
+            />
+          </div>
+          <div>
+            <Label htmlFor="height">Height (inches)</Label>
+            <Input
+              id="height"
+              type="number"
+              value={height}
+              onFocus={handleFocus(setHeight)}
+              onChange={(e) => setHeight(Number(e.target.value))}
+              placeholder="Enter height"
+            />
+          </div>
+        </div>
+        {error && <p className="text-red-500 font-medium">{error}</p>}
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {items.map((item) => {
+            const quantity = quantities[item.name] || 1;
+            const base = item.basePrice.toFixed(2);
+            const adjusted = getDiscountedPrice(item.basePrice, quantity).toFixed(2);
+            const hasDiscount = adjusted < base;
+            const isSelected = selectedItems.includes(item.name);
+            const selectedTier = pricingTiers[item.name] || "A";
+            
+            return (
+              <Card
+                key={item.name}
+                onClick={(e) => {
+                  // prevent toggling when interacting with inputs/selects
+                  if (e.target.tagName !== 'SELECT' && e.target.tagName !== 'INPUT') {
+                    toggleSelectedItem(item.name);
+                  }
+                }}
+                className={clsx("transition-transform duration-150 ease-in-out hover:scale-[1.02] cursor-pointer", {
+                  "ring-4 ring-blue-500": isSelected,
+                  "opacity-50": selectedItems.length > 0 && !isSelected
+                })}
+              >
+                <CardContent className="p-4">
+                  <img
+                    src={item.image}
+                    alt={item.name}
+                    className="rounded-xl object-cover w-full h-[200px]"
+                  />
+                  <h3 className="text-xl font-bold mt-4">{item.name}</h3>
+                  <p className="text-sm mt-1 text-gray-600">{item.description}</p>
+                  <div className="mt-2">
+                    <Label htmlFor={`tier-${item.name}`}>Pricing Tier</Label>
+                    <select
+                      id={`tier-${item.name}`}
+                      className="w-full mt-1 mb-2 p-1 border rounded"
+                      value={selectedTier}
+                      onChange={(e) => setPricingTiers((prev) => ({ ...prev, [item.name]: e.target.value }))}
+                    >
+                      <option value="A">A</option>
+                      <option value="B">B</option>
+                      <option value="C">C</option>
+                    </select>
+                    <Label htmlFor={`qty-${item.name}`}>Quantity</Label>
+                    <Input
+                      id={`qty-${item.name}`}
+                      type="number"
+                      min="1"
+                      value={quantity}
+                      onChange={(e) => handleQuantityChange(item.name, e.target.value)}
+                    />
+                  </div>
+                  {hasDiscount && (
+                    <p className="text-sm text-green-600 mt-1">
+                      Volume discount: ${adjusted}/sq ft (was ${base})
+                    </p>
+                  )}
+                  {isSelected && (
+                    <p className="mt-2 font-semibold text-lg text-blue-800">
+                      Total: ${pricing[item.name] || "0.00"}
+                    </p>
+                  )}
+                </CardContent>
+              </Card>
+            );
+          })}
+          <div className="text-center mt-10">
+  <Button
+    onClick={exportToPDF}
+    className="bg-blue-600 text-white px-6 py-3 rounded-xl shadow-md hover:bg-blue-700"
+  >
+    Export Estimate to PDF
+  </Button>
+</div>
+
+        </div>
+      </div>
+    </div>
+  );
+}
