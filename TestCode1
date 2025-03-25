@@ -8,14 +8,28 @@ import jsPDF from "jspdf";
 
 const items = [
   {
-    name: "Vinyl Banner",
-    image: "https://plentymooredesigns.com/uploads/1/2/4/4/124403943/s706631590748981013_p93_i2_w1500.jpeg",
-    basePrice: 3.15,
-    description: "Durable 13oz or 18oz vinyl banner material for indoor and outdoor use. Resistant to water and UV exposure, vinyl banners are ideal for grand openings, trade shows, events, promotions, and building signage. Available with hemming, grommets, or pole pockets for easy hanging."
+    name: "Mesh Banners",
+    image: "https://lasvegasbanner.com/image/cache/catalog/products/mesh-banner-700x700.jpg",
+    basePrice: 4.50,
+    description: "Wind-resistant banners ideal for outdoor use. Mesh banners are made from perforated vinyl material that allows airflow, making them perfect for fences, construction sites, and large-scale signage."
   },
   {
+    name: "Vinyl Banners",
+    image: "https://plentymooredesigns.com/uploads/1/2/4/4/124403943/s706631590748981013_p93_i2_w1500.jpeg",
+    basePrice: 3.15,
+    description: "Durable 13oz vinyl banner material for indoor and outdoor use. Resistant to water and UV exposure, vinyl banners are ideal for grand openings, trade shows, events, promotions, and building signage. Available with hemming, grommets, or pole pockets for easy hanging."
+  },
+  {
+    name: "Premium Vinyl Banners",
+    image: "https://d2zn16t8uygl6t.cloudfront.net/printleaf/images/opt/products_gallery_images/double-sided-vinyl-banner-600x600-opt.jpg?v=4150",
+    basePrice: 3.15,
+    description: "Heavy-duty 18oz premium vinyl banner. Double-sided capable for versatile applications. This tear-resistant material is ideal for long-term indoor and outdoor use. It offers high opacity, water and UV resistance, and supports single- or double-sided printing. Great for building signage, pole banners, and high-impact displays."
+  },
+  
+  
+  {
     name: "Temporary Vinyl",
-    image: "https://dm79nhn1epchz.cloudfront.net/images/products_gallery_images/Roll_Media_-_Spot_On_White_Window_800x800.png",
+    image: "https://i.etsystatic.com/18578543/r/il/2a388e/5413381031/il_1140xN.5413381031_fgbb.jpg",
     basePrice: 7.00,
     description: "Low-tack, repositionable vinyl ideal for temporary wall and window applications. Easy to install and remove without leaving residue. Great for short-term branding, seasonal promos, or event decor."
   },
@@ -26,7 +40,7 @@ const items = [
     description: "High-tack adhesive vinyl designed for long-term indoor or outdoor use. UV- and water-resistant, suitable for vehicle graphics, signage, window decals, and durable labels. Available in gloss or matte finish."
   },
   {
-    name: "Coroplast Sign",
+    name: "Coroplast Signs",
     image: "https://printmor.com/wp-content/uploads/2016/03/Coroplast-Final-1-700x525.png",
     basePrice: 6.25,
     description: "Durable corrugated plastic signage, most commonly used for yard signs, real estate, event wayfinding, or temporary outdoor displays. Weather-resistant and lightweight, typically printed single- or double-sided."
@@ -45,7 +59,7 @@ const items = [
   },
   {
     name: "Acrylic Panels",
-    image: "https://printpanoramics.co.uk/cdn/shop/products/PP-Acrylic-close-up2-min_1e6dc387-1626-4c27-99cc-cc70d3748520.jpg?v=1711387375&width=1800",
+    image: "https://i.etsystatic.com/8889463/r/il/d41e1e/5914881620/il_fullxfull.5914881620_69tt.jpg",
     basePrice: 11.00,
     description: "High-gloss acrylic panels used for modern interior signage, gallery displays, and architectural applications. Offers a sleek, glass-like finish and excellent depth of color. Durable, easy to clean, and available in a variety of thicknesses."
   },
@@ -58,40 +72,144 @@ const items = [
 ];
 
 function getDiscountedPrice(basePrice, quantity) {
-  if (quantity >= 100) return basePrice * 0.85;
-  if (quantity >= 50) return basePrice * 0.9;
-  if (quantity >= 25) return basePrice * 0.95;
+  if (quantity >= 200) return basePrice * 0.737;
+  if (quantity >= 100) return basePrice * 0.7546;
+  if (quantity >= 50) return basePrice * 0.775;
+  if (quantity >= 30) return basePrice * 0.81;
+  if (quantity >= 25) return basePrice * 0.823;
+  if (quantity >= 20) return basePrice * 0.86;
+  if (quantity >= 10) return basePrice * 0.822;
+  if (quantity >= 5) return basePrice * 0.877;
   return basePrice;
 }
 
+function applyTierAndDiscount(base, tier, quantity, itemName) {
+  if (itemName === "Vinyl Banner") {
+    base = 5.42;
+    if (tier === "A") base *= 1.15;
+    else if (tier === "C") base *= 0.8;
+  } else if (itemName === "Temporary Vinyl") {
+    base = 9.74;
+    if (tier === "A") base *= 1.15;
+    else if (tier === "C") base *= 0.8;
+    else {
+      if (quantity >= 500) base *= 0.7;
+      else if (quantity >= 200) base *= 0.75;
+      else if (quantity >= 100) base *= 0.85;
+      else if (quantity >= 50) base *= 0.85;
+      else if (quantity >= 25) base *= 0.9;
+      else if (quantity >= 10) base *= 0.95;
+    }
+  } else {
+    if (tier === "A") base *= 1.3;
+    if (tier === "B") base *= 1.15;
+  }
+
+  const sampleSqFt = 24 * 36 / 144;
+  const actualSqFt = (sampleSqFt * quantity);
+  if (actualSqFt > 50) base *= 0.92;
+  else if (actualSqFt > 35) base *= 0.94;
+  else if (actualSqFt > 20) base *= 0.96;
+  else if (actualSqFt > 10) base *= 0.98;
+
+  return getDiscountedPrice(base, quantity);
+}
+
 export default function WideFormatSalesTool() {
+  const [showPrices, setShowPrices] = useState(true);
+  
   const [grandTotal, setGrandTotal] = useState(0);
   const [quantities, setQuantities] = useState({});
   const [dimensions, setDimensions] = useState({});
   const [pricing, setPricing] = useState({});
+  const [priceFlash, setPriceFlash] = useState({});
   const [finishingOptions, setFinishingOptions] = useState({
-    'Vinyl Banner': ['Grommets (Every 24\")', 'Hemming Around Perimeter']
+    'Premium Vinyl Banners': ['Grommets (Every 24\")', 'Hemming Around Perimeter'],
+    'Coroplast Signs': [],
+    'Mesh Banners': ['Grommets (Every 24")', 'Hemming Around Perimeter'],
+    'Vinyl Banners': ['Grommets (Every 24")', 'Hemming Around Perimeter']
   });
   const [pricingTiers, setPricingTiers] = useState({});
   const [selectedItems, setSelectedItems] = useState([]);
+
+  const handleDownloadPDF = () => {
+    const doc = new jsPDF();
+    doc.setFontSize(18);
+    doc.text("Worth Higgins & Associates", 14, 20);
+    doc.setFontSize(11);
+    doc.text("8870 Park Central Drive, Richmond VA 23227", 14, 28);
+    doc.setFontSize(16);
+    doc.text("Estimate", 14, 40);
+    doc.setFontSize(12);
+    const date = new Date().toLocaleDateString();
+    doc.text(`Date: ${date}`, 150, 20);
+
+    let y = 50;
+    doc.setFontSize(11);
+    selectedItems.forEach((itemName, i) => {
+      const item = items.find((x) => x.name === itemName);
+      const dims = dimensions[itemName];
+      const qty = quantities[itemName] ?? 1;
+      const price = pricing[itemName] || "0.00";
+      const finishes = finishingOptions[itemName] || [];
+
+      doc.setFont(undefined, "bold");
+      doc.text(`${i + 1}. ${itemName}`, 14, y);
+      doc.setFont(undefined, "normal");
+      y += 6;
+      doc.text(`Description: ${item.description.slice(0, 100)}...`, 14, y);
+      y += 6;
+      doc.text(`Size: ${dims?.width}" x ${dims?.height}"  |  Qty: ${qty}`, 14, y);
+      y += 6;
+      if (finishes.length > 0) {
+        doc.text(`Finishing: ${finishes.join(", ")}`, 14, y);
+        y += 6;
+      }
+      doc.text(`Subtotal: $${price}`, 14, y);
+      y += 10;
+    });
+
+    doc.setFont(undefined, "bold");
+    doc.text(`Total: $${grandTotal.toFixed(2)}`, 14, y);
+    y += 6;
+    doc.setFont(undefined, "normal");
+    doc.text("Note: Tax and shipping are not included and will be added to final invoice. A $50 minimum applies to the overall order.", 14, y);
+
+    doc.save("Estimate.pdf");
+  };
+
+  
+  
 
   useEffect(() => {
     calculatePricing();
   }, [quantities, dimensions, pricingTiers, finishingOptions, selectedItems]);
 
+  useEffect(() => {
+    if (Object.keys(dimensions).length > 0 || Object.keys(quantities).length > 0) {
+      calculatePricing();
+    }
+  }, [dimensions, quantities]);
+
   const handleQuantityChange = (name, value) => {
-    setQuantities((prev) => ({ ...prev, [name]: Number(value) }));
-  };
+  setQuantities((prev) => {
+    const updated = { ...prev, [name]: Number(value) };
+    return updated;
+  });
+};
 
   const handleDimensionChange = (name, key, value) => {
-    setDimensions((prev) => ({
+  setDimensions((prev) => {
+    const updated = {
       ...prev,
       [name]: {
         ...prev[name],
         [key]: Number(value),
       },
-    }));
-  };
+    };
+    return updated;
+  });
+};
 
   const toggleSelectedItem = (name) => {
     setSelectedItems((prev) =>
@@ -99,101 +217,98 @@ export default function WideFormatSalesTool() {
     );
   };
 
-  const handleFinishingToggle = (itemName, option) => {
-    const current = new Set(finishingOptions[itemName] || []);
-    current.has(option) ? current.delete(option) : current.add(option);
-    setFinishingOptions((prev) => ({ ...prev, [itemName]: Array.from(current) }));
-  };
-
   const calculatePricing = () => {
     const newPricing = {};
+    
+    let total = 0;
 
-    items.forEach((item) => {
-      const dims = dimensions[item.name] || { width: 0, height: 0 };
-      if (!dims.width || !dims.height) {
-        newPricing[item.name] = "0.00";
-        return;
+    selectedItems.forEach((itemName) => {
+      const item = items.find((i) => i.name === itemName);
+      const { width = 0, height = 0 } = dimensions[itemName] || {};
+      const quantity = Math.max(1, quantities[itemName] || 1);
+      const tier = pricingTiers[itemName] || "B";
+      const sqFt = (width * height) / 144;
+      const adjustedPrice = applyTierAndDiscount(item.basePrice, tier, quantity, itemName);
+      let subtotal = sqFt * adjustedPrice * quantity;
+
+      if (
+        ["Vinyl Banners", "Mesh Banners"].includes(itemName) &&
+        (finishingOptions[itemName] || []).includes("Pole Pocket")
+      ) {
+        subtotal += 18 * quantity;
       }
-      const sqFt = (dims.width * dims.height) / 144;
-      const quantity = Math.max(1, Number(quantities[item.name] || 1));
-      let base = item.basePrice;
-      const tier = pricingTiers[item.name] || "A";
-      if (item.name === "Vinyl Banner") {
-        if (tier === "B") base = 9.74;
-        else if (tier === "A") base = 9.74 * 1.15;
-        else base = 9.74 * 0.85;
-      } else if (item.name === "Temporary Vinyl") {
-        if (tier === "B") {
-          if (quantity >= 500) base = 9.74 * 0.49;  // 51% savings
-          else if (quantity >= 200) base = 9.74 * 0.52; // 48%
-          else if (quantity >= 100) base = 9.74 * 0.58; // 42%
-          else if (quantity >= 50) base = 9.74 * 0.6;   // 40%
-          else if (quantity >= 25) base = 9.74 * 0.65;  // 35%
-          else if (quantity >= 10) base = 9.74 * 0.75;  // 25%
-          else if (quantity >= 5)  base = 9.74 * 0.8;   // 20%
-          else base = 9.74;
-        } else if (tier === "A") {
-          base = 9.74 * 1.15;
-        } else {
-          base = 9.74 * 0.85;
-        }
-      } else {
-        if (tier === "A") base *= 1.3;
-        if (tier === "B") base *= 1.15;
-      }
-      const adjustedPrice = getDiscountedPrice(base, quantity);
-      const rawPrice = sqFt * adjustedPrice * quantity;
-      newPricing[item.name] = (rawPrice < 50 ? 50 : rawPrice).toFixed(2);
+      newPricing[itemName] = subtotal.toFixed(2);
+      total += subtotal;
     });
 
     setPricing(newPricing);
-    const total = Object.entries(newPricing)
-      .filter(([name]) => selectedItems.includes(name))
-      .reduce((sum, [_, value]) => sum + parseFloat(value), 0);
+    setPriceFlash((prev) => {
+      const updated = { ...prev };
+      Object.keys(newPricing).forEach((key) => {
+        if (newPricing[key] !== pricing[key]) {
+          updated[key] = true;
+          setTimeout(() => {
+            setPriceFlash((prevFlash) => ({ ...prevFlash, [key]: false }));
+          }, 400);
+        }
+      });
+      return updated;
+    });
     setGrandTotal(total);
   };
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-8 font-sans">
       <div className="relative text-center mb-10 py-6 px-6 border-2 border-blue-300 rounded-xl shadow-md">
-  <div className="text-center">
-    <img
-      src="https://worthhiggins.com/assets/Worth-Wide-Color.png"
-      alt="Worth Wide Logo"
-      className="mx-auto h-16 sm:h-20 mb-2"
-    />
-    <h1 className="text-5xl font-extrabold tracking-tight text-blue-900 mt-2" style={{ lineHeight: '1.2' }}>
-      Quick Price Tool
-    </h1>
-    <p className="text-lg text-gray-500 font-light tracking-wide">Instant pricing for wide format signage</p>
-  </div>
-      
-<a
-    href="https://forms.gle/example-custom-quote-form"
-    target="_blank"
-    rel="noopener noreferrer"
-    className="absolute top-4 right-4 flex items-center gap-1 text-blue-500 hover:text-blue-700 text-sm"
-    title="Request a Custom Quote"
-  >
-    <span>Custom</span>
-    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor" className="w-5 h-5">
-      <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 8.25v-1.5A2.25 2.25 0 0014.25 4.5h-4.5A2.25 2.25 0 007.5 6.75v1.5M3.75 9l.637 7.012a2.25 2.25 0 002.244 2.013h10.738a2.25 2.25 0 002.244-2.013L20.25 9H3.75z" />
-    </svg>
-  </a>
-</div>
-<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        <img
+          src="https://worthhiggins.com/assets/Worth-Wide-Color.png"
+          alt="Worth Wide Logo"
+          className="mx-auto h-16 sm:h-20 mb-2"
+        />
+        <h1 className="text-5xl font-extrabold tracking-tight text-blue-900 mt-2">
+          Quick Price Tool
+        </h1>
+        <p className="text-lg text-gray-500 font-light tracking-wide">
+          Instant pricing for wide format signage
+        </p>
+        <a
+          href="https://form.jotform.com/250788758150063"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="absolute top-4 right-4 flex items-center gap-1 text-blue-500 hover:text-blue-700 text-sm"
+          title="Request a Custom Quote"
+        >
+          <span>Custom</span>
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor" className="w-5 h-5">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 8.25v-1.5A2.25 2.25 0 0014.25 4.5h-4.5A2.25 2.25 0 007.5 6.75v1.5M3.75 9l.637 7.012a2.25 2.25 0 002.244 2.013h10.738a2.25 2.25 0 002.244-2.013L20.25 9H3.75z" />
+          </svg>
+        </a>
+      </div>
+      {showPrices && (
+        <div className="text-center mb-6">
+          <p className="text-3xl font-bold text-blue-900">
+            Total: ${grandTotal.toFixed(2)}
+          </p>
+          <p className="text-sm text-gray-500 italic">
+            (Excludes tax & shipping; $50 minimum order)
+          </p>
+          <div className="mt-4">
+            <Button onClick={handleDownloadPDF} className="bg-blue-600 text-white hover:bg-blue-700">
+              Download Estimate PDF
+            </Button>
+          </div>
+        </div>
+      )}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
         {items.map((item) => {
           const isSelected = selectedItems.includes(item.name);
-          const quantity = quantities[item.name] || 1;
-          const dims = dimensions[item.name] || { width: 0, height: 0 };
-          const selectedFinishes = finishingOptions[item.name] || [];
-
+          const dims = dimensions[item.name] || {};
           return (
             <Card
               key={item.name}
-              className={clsx("transition-all transform duration-200 ease-in-out hover:scale-105 hover:shadow-md border-2 rounded-2xl", {
-                "border-blue-500 shadow-lg": isSelected,
-                "border-gray-200": !isSelected
+              className={clsx("transition-transform duration-300 ease-out border-2 rounded-2xl", {
+                "border-blue-500 shadow-lg": selectedItems.includes(item.name),
+                "border-gray-200 hover:-translate-y-0.5 hover:shadow-md hover:border-blue-400": !selectedItems.includes(item.name),
               })}
               onClick={(e) => {
                 if (!['INPUT', 'SELECT', 'TEXTAREA', 'LABEL'].includes(e.target.tagName)) {
@@ -201,114 +316,205 @@ export default function WideFormatSalesTool() {
                 }
               }}
             >
-              <CardContent className="p-4">
-                <img src={item.image} alt={item.name} className="w-full h-48 sm:h-56 object-contain bg-white rounded mb-4 border" />
-                <h2 className="text-xl font-semibold text-blue-800">{item.name}</h2>
-                <details className="text-sm text-gray-600 mb-3">
-  <summary className="cursor-pointer text-sm text-gray-600">
-    {item.description.slice(0, 50)}...
+              <CardContent className="p-4 relative min-h-[420px]">
+  {isSelected && (
+    <div className="absolute top-3 right-3 bg-green-600 rounded-full p-1 shadow-md animate-fade-in">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="white" className="w-4 h-4">
+        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414L8.414 15l-4.121-4.121a1 1 0 011.414-1.414L8.414 12.586l7.879-7.879a1 1 0 011.414 0z" clipRule="evenodd" />
+      </svg>
+    </div>
+  )}
+                <img src={item.image} alt={item.name} className="w-full h-48 sm:h-56 object-cover rounded-md shadow-sm" />
+                <div className="flex justify-between items-center mt-3">
+                  <h2 className="text-lg font-semibold">{item.name}</h2>
+                  
+                </div>
+                <details className="text-sm text-gray-600 mb-3 group">
+  <summary className="cursor-pointer flex items-center gap-1 group">
+    <p className="transition-all duration-200 line-clamp-2 group-open:line-clamp-none">
+      {item.description}
+    </p>
+    
   </summary>
-  <div className="mt-1">
-    <p>{item.description}</p>
-  </div></details>
+</details>
+                <div className="grid grid-cols-3 gap-2 mt-3 items-end">
+                  <div>
+  <Label className={clsx({ 'text-red-600': (dims.width ?? 0) > 52 && (item.name === "Temporary Vinyl" || item.name === "Permanent Vinyl") })}>Width (in)</Label>
+  {(dims.width ?? 0) >= 52 && (item.name === "Temporary Vinyl" || item.name === "Permanent Vinyl") && (
+    <p className="text-xs text-red-600 mt-1">Max Width 52"</p>
+  )}
+  <Input
+    type="number"
+    min="1"
+    max={item.name === "Temporary Vinyl" || item.name === "Permanent Vinyl" ? 52 : undefined}
+    value={dims.width || ''} placeholder="0"
+    onFocus={(e) => e.target.select()}
+    className={clsx("transition", {
+      'text-gray-400': (dims.width ?? 0) === 0,
+      'text-black': (dims.width ?? 0) !== 0,
+      'border-red-500': (dims.width ?? 0) > 52 && (item.name === "Temporary Vinyl" || item.name === "Permanent Vinyl")
+    })}
+    onChange={(e) => handleDimensionChange(item.name, "width", e.target.value)}
+  />
+</div>
+                  <div>
+                    <Label>Height (in)</Label>
+                    <Input
+                      type="number"
+                      min="1"
+                      value={dims.height || ''} placeholder="0"
+                      onFocus={(e) => e.target.select()}
+                      className={clsx("transition", {
+                        'text-gray-400': (dims.height ?? 0) === 0,
+                        'text-black': (dims.height ?? 0) !== 0
+                      })}
+                      onChange={(e) => handleDimensionChange(item.name, "height", e.target.value)}
+                    />
+                  </div>
+                  <div>
+                    <Label>Qty</Label>
+                    <Input
+                      type="number"
+                      min="1"
+                      value={quantities[item.name] || ''} placeholder="0"
+                      onFocus={(e) => e.target.select()}
+                      className={clsx("transition", {
+                        'text-gray-400': (quantities[item.name] ?? 0) === 0,
+                        'text-black': (quantities[item.name] ?? 0) !== 0
+                      })}
+                      onChange={(e) => handleQuantityChange(item.name, e.target.value)}
+                    />
+                  </div>
+                </div>
+                
 
-                <div className="grid grid-cols-3 gap-2 mb-3">
-  <div>
-    <Label>Width (in)</Label>
-    <Input
-      type="number"
-      value={dims.width}
-      placeholder="0"
-      onChange={(e) => handleDimensionChange(item.name, 'width', e.target.value)}
-      onFocus={(e) => e.target.value === "0" && (e.target.value = "")}
-    />
+{["Temporary Vinyl", "Permanent Vinyl"].includes(item.name) ? (
+  <details className="mt-3">
+    <summary className="text-sm text-blue-600 underline cursor-pointer mb-1">Finishing Options</summary>
+    <div className="flex flex-col space-y-1 text-left text-sm mt-2">
+      {["Laminate", "Cut to Shape"].map((finish) => (
+        <label key={finish} className="inline-flex items-center space-x-2">
+          <input
+            type="checkbox"
+            checked={(finishingOptions[item.name] || []).includes(finish)}
+            onChange={() => {
+              const current = new Set(finishingOptions[item.name] || []);
+              current.has(finish) ? current.delete(finish) : current.add(finish);
+              setFinishingOptions((prev) => ({ ...prev, [item.name]: Array.from(current) }));
+            }}
+          />
+          <span>{finish}</span>
+        </label>
+      ))}
+    </div>
+  </details>
+) : item.name === "Coroplast Signs" ? (
+  <details className="mt-3">
+    <summary className="text-sm text-blue-600 underline cursor-pointer mb-1">Finishing Options</summary>
+    <div className="flex flex-col space-y-1 text-left text-sm mt-2">
+      {["H-Stake", "Grommets (Top Corners)", "Double-Sided"].map((finish) => (
+        <label key={finish} className="inline-flex items-center space-x-2">
+          <input
+            type="checkbox"
+            checked={(finishingOptions[item.name] || []).includes(finish)}
+            onChange={() => {
+              const current = new Set(finishingOptions[item.name] || []);
+              current.has(finish) ? current.delete(finish) : current.add(finish);
+              setFinishingOptions((prev) => ({ ...prev, [item.name]: Array.from(current) }));
+            }}
+          />
+          <span>{finish}</span>
+        </label>
+      ))}
+    </div>
+  </details>
+) : item.name === "Premium Vinyl Banners" ? (
+  <details className="mt-3">
+    <summary className="text-sm text-blue-600 underline cursor-pointer mb-1">Finishing Options</summary>
+    <div className="flex flex-col space-y-1 text-left text-sm mt-2">
+      {["Grommets (Every 24\")", "Hemming Around Perimeter", "Double-Sided"].map((finish) => (
+        <label key={finish} className="inline-flex items-center space-x-2">
+          <input
+            type="checkbox"
+            checked={(finishingOptions[item.name] || []).includes(finish)}
+            onChange={() => {
+              const current = new Set(finishingOptions[item.name] || []);
+              current.has(finish) ? current.delete(finish) : current.add(finish);
+              setFinishingOptions((prev) => ({ ...prev, [item.name]: Array.from(current) }));
+            }}
+          />
+          <span>{finish}</span>
+        </label>
+      ))}
+    </div>
+  </details>
+) : (
+  <details className="mt-3">
+    <summary className="text-sm text-blue-600 underline cursor-pointer mb-1">Finishing Options</summary>
+    <div className="flex flex-col space-y-1 text-left text-sm mt-2">
+      {["Grommets (Every 24\")", "Hemming Around Perimeter", "Pole Pocket"].map((finish) => (
+        <div key={finish} className="flex flex-col space-y-1">
+          <label className="inline-flex items-center space-x-2">
+            <input
+              type="checkbox"
+              checked={(finishingOptions[item.name] || []).includes(finish)}
+              onChange={() => {
+                const current = new Set(finishingOptions[item.name] || []);
+                current.has(finish) ? current.delete(finish) : current.add(finish);
+                setFinishingOptions((prev) => ({ ...prev, [item.name]: Array.from(current) }));
+              }}
+            />
+            <span>{finish}</span>
+          </label>
+          {finish === "Pole Pocket" && (finishingOptions[item.name] || []).includes(finish) && (
+            <div className="ml-6 flex flex-wrap gap-2 text-xs text-gray-600">
+              {["Top", "Bottom", "Left", "Right"].map((loc) => {
+                const locKey = `${finish} (${loc})`;
+                const isChecked = Array.isArray(finishingOptions[item.name]) && finishingOptions[item.name].includes(locKey);
+                return (
+                  <label key={locKey} className="inline-flex items-center space-x-1">
+                    <input
+                      type="checkbox"
+                      checked={isChecked}
+                      onChange={() => {
+                        const current = new Set(finishingOptions[item.name] || []);
+                        current.has(locKey) ? current.delete(locKey) : current.add(locKey);
+                        setFinishingOptions((prev) => ({ ...prev, [item.name]: Array.from(current) }));
+                      }}
+                    />
+                    <span>{loc}</span>
+                  </label>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      ))}
+    </div>
+  </details>
+)}
+                <div className="mt-4 flex flex-col items-end">
+  <div className="text-sm text-gray-600 mb-1">
+    <label className="mr-1">Pricing Tier:</label>
+    <select
+      className="text-sm border rounded px-1 py-0.5"
+      value={pricingTiers[item.name] || "B"}
+      onChange={(e) => setPricingTiers((prev) => ({ ...prev, [item.name]: e.target.value }))}
+    >
+      <option value="A">A</option>
+      <option value="B">B</option>
+      <option value="C">C</option>
+    </select>
   </div>
-  <div>
-    <Label>Height (in)</Label>
-    <Input
-      type="number"
-      value={dims.height}
-      placeholder="0"
-      onChange={(e) => handleDimensionChange(item.name, 'height', e.target.value)}
-      onFocus={(e) => e.target.value === "0" && (e.target.value = "")}
-    />
-  </div>
-  <div>
-    <Label>Qty</Label>
-    <Input
-      type="number"
-      min="1"
-      value={quantity}
-      onChange={(e) => handleQuantityChange(item.name, e.target.value)}
-    />
-  </div>
-  
+  <p className={clsx("font-bold text-lg transition-all duration-300 ease-in-out", priceFlash[item.name] ? "text-green-700 scale-105" : "text-green-700")}>${pricing[item.name] || '0.00'}</p>
 </div>
-<details className="mt-3">
-  <summary className="text-sm text-blue-600 underline cursor-pointer mb-1">Finishing Options</summary>
-  <div className="flex flex-col space-y-1 text-left text-sm mt-2">
-                    {item.name === 'Vinyl Banner' ? (
-                      [
-                        'Grommets (Every 24\")',
-                        'Hemming Around Perimeter',
-                        'Pole Pocket 1',
-                        'Pole Pocket 2',
-                        'Pole Pocket 3',
-                        'Pole Pocket 4'
-                      ].map((finish) => (
-                        <label key={finish} className="inline-flex items-center space-x-2">
-                          <input
-                            type="checkbox"
-                            checked={selectedFinishes.includes(finish)}
-                            onChange={() => handleFinishingToggle(item.name, finish)}
-                          />
-                          <span>{finish}</span>
-                        </label>
-                      ))
-                    ) : (
-                      [
-                        'Grommets (Every 24\")',
-                        'Double Sided'
-                      ].map((finish) => (
-                        <label key={finish} className="inline-flex items-center space-x-2">
-                          <input
-                            type="checkbox"
-                            checked={selectedFinishes.includes(finish)}
-                            onChange={() => handleFinishingToggle(item.name, finish)}
-                          />
-                          <span>{finish}</span>
-                        </label>
-                      ))
-                    )}
-                  </div></details>
-<div className="mt-2 text-right text-xs text-gray-400">Pricing Tier: 
-  <select
-    value={pricingTiers[item.name] || "A"}
-    onChange={(e) => setPricingTiers((prev) => ({ ...prev, [item.name]: e.target.value }))}
-    className="ml-1 border rounded px-1 py-0.5 text-xs bg-white"
-  >
-    <option value="A">A</option>
-    <option value="B">B</option>
-    <option value="C">C</option>
-  </select>
-</div>
-<p className="mt-4 font-semibold text-green-700 text-lg">
-  ${pricing[item.name] || "0.00"}
-                </p>
-              </CardContent>
+</CardContent>
             </Card>
           );
         })}
       </div>
 
-      <div className="text-right mt-10">
-        <p className="text-3xl font-bold text-blue-900">
-          Total: ${grandTotal.toFixed(2)}
-        </p>
-        <p className="text-sm text-gray-500 italic">
-          (Excludes tax & shipping)
-        </p>
-      </div>
+        
     </div>
   );
-}
+} 
